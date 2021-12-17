@@ -71,7 +71,7 @@ def splitting_algorithm(json_data, threads_count):
             break
         else:
             threads.append(threading.Thread(target=download_file, args=(
-            json_data, int(size), used_fragments, used_fragments + fragment_size - 1, i)))
+                json_data, int(size), used_fragments, used_fragments + fragment_size - 1, i)))
             print(f'downloading {used_fragments}-{used_fragments + fragment_size - 1}')
         used_fragments += fragment_size
 
@@ -85,7 +85,6 @@ def splitting_algorithm(json_data, threads_count):
         all_parts = list(queue.queue)
         sorted_items = sorted(all_parts, reverse=False)
         for item in sorted_items:
-            # print(item[0])
             out_file.write(item[1])
             print(f'added {item[0]}')
 
