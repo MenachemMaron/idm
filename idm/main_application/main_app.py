@@ -1,3 +1,6 @@
+'''
+main application for IDM project
+'''
 import tkinter as tk
 import requests
 import socket
