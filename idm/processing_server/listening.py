@@ -1,3 +1,7 @@
+"""
+server for communication between main application and Chrome extension
+"""
+
 import socket
 import json
 

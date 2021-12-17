@@ -1,6 +1,6 @@
-'''
+"""
 main application for IDM project
-'''
+"""
 
 import tkinter as tk
 import requests
@@ -14,6 +14,7 @@ from queue import Queue
 
 url_notifier = threading.Condition()
 queue = Queue()
+
 
 def open_window(json_data):
     root = tk.Tk()
@@ -29,27 +30,6 @@ def tk_create_button(gui_text, exec_event, window):
     button = tk.Button(window, text=gui_text)
     button.pack()
     button.bind("<Button-1>", exec_event)
-
-
-# def download_file(json_data):
-#     url = json_data['final_url']
-
-#     response = requests.head(url, allow_redirects=True)
-#     size = response.headers.get('content-length', 0)
-#     print(size)
-
-#     with open(url[url.rfind("/") + 1 :], "ab") as out_file:
-#         req = Request(
-#             url,
-#             headers={
-#                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36",
-#                 # 'Range': 'bytes=<start>'
-#                 # 'Range': 'bytes=<start>,<end>'
-#                 # 'Range': 'bytes=0-10000'
-#             },
-#         )
-#         with urlopen(req) as response:
-#             shutil.copyfileobj(response, out_file)
 
 
 def download_file(json_data, size, start_byte, end_byte, index):
@@ -69,9 +49,11 @@ def download_file(json_data, size, start_byte, end_byte, index):
         print('downloaded ' + str(index))
         # file_parts_dict[str(index)] = response
         # print(response.read())
-        tup = str(index), response
+        data = response.read()
+        file_part = [str(index), data]
+        # print(file_part)
         # print(tup[1].read())
-        queue.put(tup)
+        queue.put(file_part)
 
     # shutil.copyfileobj(response, out_file)
 
@@ -88,44 +70,41 @@ def splitting_algorithm(json_data, threads_count):
 
     threads = []
     for i in range(threads_count):
-        if used_fragments + fragment_size*2 > int(size):
-            last_thread = threading.Thread(target=download_file, args=(json_data, int(size), used_fragments, int(size), i))
+        if used_fragments + fragment_size * 2 > int(size):
+            last_thread = threading.Thread(target=download_file,
+                                           args=(json_data, int(size), used_fragments, int(size), i))
             threads.append(last_thread)
             print(f'downloading {used_fragments}-{size}')
             break
         else:
-            threads.append(threading.Thread(target=download_file, args=(json_data, int(size), used_fragments, used_fragments+fragment_size-1, i)))
-            print(f'downloading {used_fragments}-{used_fragments+fragment_size-1}')
-        used_fragments += fragment_size 
-    
+            threads.append(threading.Thread(target=download_file, args=(json_data, int(size), used_fragments, used_fragments + fragment_size - 1, i)))
+            print(f'downloading {used_fragments}-{used_fragments + fragment_size - 1}')
+        used_fragments += fragment_size
+
     for thread in threads:
         thread.start()
 
     for thread in threads:
         thread.join()
 
-    with open(url[url.rfind("/") + 1 :], "ab") as out_file:
-        all_parts_dict = {}
-        print(list(queue.queue)[0][1].read())
-        # TODO: figure out why does this receive an empty value from download_file() even though the value in download_file() is not None
-        # for tup in list(queue.queue):
-        #     # print(tup[1].read())
-        #     all_parts_dict[tup[0]] = tup[1]
-        # sorted_items = sorted(all_parts_dict.items())
-        # for item in sorted_items:
-        #     print(item[0])
-        #     shutil.copyfileobj(item[1], out_file)
+    with open(url[url.rfind("/") + 1:], "ab") as out_file:
+        all_parts = list(queue.queue)
+        sorted_items = sorted(all_parts, reverse=False)
+        for item in sorted_items:
+            # print(item[0])
+            out_file.write(item[1])
+            print(f'added {item[0]}')
 
 
 def listen_for_server():
     print('listen_for_server started')
 
-    HOST = '127.0.0.1'
-    PORT = 65433
+    host = '127.0.0.1'
+    port = 65433
     global global_json_data
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.bind((HOST, PORT))
+        sock.bind((host, port))
 
         while True:
             sock.listen(1)
@@ -153,9 +132,9 @@ def main_proc():
 
 
 def main():
-    threading.Thread(target = listen_for_server).start()
-    threading.Thread(target = main_proc).start()
-    
+    threading.Thread(target=listen_for_server).start()
+    threading.Thread(target=main_proc).start()
+
 
 if __name__ == "__main__":
     main()
