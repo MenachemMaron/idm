@@ -7,10 +7,9 @@ import requests
 import socket
 import threading
 import json
-import shutil
 from urllib.request import Request, urlopen
-import collections
 from queue import Queue
+import filecmp
 
 url_notifier = threading.Condition()
 queue = Queue()
@@ -47,15 +46,9 @@ def download_file(json_data, size, start_byte, end_byte, index):
 
     with urlopen(req) as response:
         print('downloaded ' + str(index))
-        # file_parts_dict[str(index)] = response
-        # print(response.read())
         data = response.read()
         file_part = [str(index), data]
-        # print(file_part)
-        # print(tup[1].read())
         queue.put(file_part)
-
-    # shutil.copyfileobj(response, out_file)
 
 
 def splitting_algorithm(json_data, threads_count):
@@ -77,7 +70,8 @@ def splitting_algorithm(json_data, threads_count):
             print(f'downloading {used_fragments}-{size}')
             break
         else:
-            threads.append(threading.Thread(target=download_file, args=(json_data, int(size), used_fragments, used_fragments + fragment_size - 1, i)))
+            threads.append(threading.Thread(target=download_file, args=(
+            json_data, int(size), used_fragments, used_fragments + fragment_size - 1, i)))
             print(f'downloading {used_fragments}-{used_fragments + fragment_size - 1}')
         used_fragments += fragment_size
 
@@ -94,6 +88,15 @@ def splitting_algorithm(json_data, threads_count):
             # print(item[0])
             out_file.write(item[1])
             print(f'added {item[0]}')
+
+    request = Request(url, headers={
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36"})
+    comp_data = urlopen(request)
+
+    with open("testing.exe", "wb") as file:
+        file.write(comp_data.read())
+
+    print(filecmp.cmp('testing.exe', 'setup-lightshot.exe'))
 
 
 def listen_for_server():
